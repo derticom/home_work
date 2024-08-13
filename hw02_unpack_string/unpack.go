@@ -20,11 +20,7 @@ func Unpack(input string) (string, error) {
 
 		switch {
 		case r == '\\':
-			if i == len(runes)-1 { // символ экранирования последний.
-				return "", ErrInvalidString
-			}
-
-			if len(runes) < i+1 || (!unicode.IsDigit(runes[i+1]) && runes[i+1] != '\\') {
+			if i == len(runes)-1 || len(runes) < i+1 || (!unicode.IsDigit(runes[i+1]) && runes[i+1] != '\\') {
 				return "", ErrInvalidString
 			}
 
@@ -33,8 +29,7 @@ func Unpack(input string) (string, error) {
 				result.WriteString(toAdd)
 
 				prev = runes[i+1]
-				i = i + 2
-
+				i += 2
 				continue
 			}
 
@@ -45,11 +40,7 @@ func Unpack(input string) (string, error) {
 			continue
 
 		case unicode.IsDigit(r):
-			if result.Len() == 0 { // первый символ в строке цифра.
-				return "", ErrInvalidString
-			}
-
-			if i > 2 && runes[i-2] != '\\' && unicode.IsDigit(runes[i-1]) {
+			if result.Len() == 0 || i > 2 && runes[i-2] != '\\' && unicode.IsDigit(runes[i-1]) {
 				return "", ErrInvalidString
 			}
 
@@ -61,17 +52,13 @@ func Unpack(input string) (string, error) {
 				result.WriteRune(prev)
 			}
 
-		case unicode.IsLetter(r):
+		default:
 			if (len(runes) > i+1 && runes[i+1]-'0' != 0) || i == len(runes)-1 {
 				result.WriteRune(r)
 			}
-
-		default:
-			return "", ErrInvalidString
 		}
 
 		prev = r
-
 	}
 
 	return result.String(), nil
