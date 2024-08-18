@@ -1,8 +1,10 @@
 package hw03frequencyanalysis
 
 import (
+	"reflect"
 	"testing"
 
+	//nolint:depguard // Применение 'require' необходимо для тестирования.
 	"github.com/stretchr/testify/require"
 )
 
@@ -79,4 +81,31 @@ func TestTop10(t *testing.T) {
 			require.Equal(t, expected, Top10(text))
 		}
 	})
+}
+
+func TestTop101(t *testing.T) {
+	type args struct {
+		text string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			"Success case 1",
+			args{text: `семь четыре один два три два четыре три три четыре четыре пять пять пять пять пять шесть 
+				шесть шесть шесть шесть шесть семь семь семь семь семь семь восемь восемь восемь восемь восемь 
+				восемь восемь восемь девять девять девять девять девять девять девять девять девять десять десять 
+				десять десять десять десять десять десять десять десять`},
+			[]string{"десять", "девять", "восемь", "семь", "шесть", "пять", "четыре", "три", "два", "один"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := Top10(tt.args.text); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Top10() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
