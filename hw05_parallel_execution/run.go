@@ -9,30 +9,10 @@ var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
 
 type Task func() error
 
-// CompletedTasksCount структура для подсчета выполненных задач.
-type CompletedTasksCount struct {
-	count int
-	mu    sync.Mutex
-}
-
-func (c *CompletedTasksCount) increase() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.count++
-}
-
-func (c *CompletedTasksCount) getCount() int {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	return c.count
-}
-
 // Run starts tasks in n goroutines and stops its work when receiving m errors from tasks.
 func Run(tasks []Task, n, m int) error {
 	var (
-		completedTasksCount CompletedTasksCount
+		completedTasksCount int // Счетчик выполненных задач.
 		errCount            int // Счетчик ошибок.
 		wg                  sync.WaitGroup
 	)
@@ -41,13 +21,15 @@ func Run(tasks []Task, n, m int) error {
 
 	done := make(chan struct{})
 	tasksCh := make(chan Task)
+	completedTasksCh := make(chan struct{})
+	defer close(completedTasksCh)
 	errCh := make(chan error)
 	defer close(errCh)
 
 	// Запуск воркеров.
 	for i := 0; i < n; i++ {
 		wg.Add(1)
-		go worker(tasksCh, errCh, done, &completedTasksCount, &wg)
+		go worker(tasksCh, completedTasksCh, errCh, done, &wg)
 	}
 
 	// Отправка задач воркерам.
@@ -61,7 +43,11 @@ func Run(tasks []Task, n, m int) error {
 			case <-done:
 				break
 			default:
-				tasksCh <- task
+				select {
+				case tasksCh <- task:
+				case <-done:
+					return
+				}
 			}
 		}
 	}()
@@ -69,22 +55,25 @@ func Run(tasks []Task, n, m int) error {
 	// Цикл с логикой управления остановкой функции.
 	for {
 		select {
+		case <-completedTasksCh:
+			completedTasksCount++
 		case <-errCh:
 			errCount++
-		default:
 		}
 
+		// Остановка при достижении макс. кол-ва ошибок.
 		if maxErrors != 0 && errCount == maxErrors {
 			break
 		}
 
-		if completedTasksCount.getCount() == len(tasks)-errCount {
+		// Остановка при выполнении всех задач.
+		if completedTasksCount == len(tasks)-errCount {
 			break
 		}
 
-		// Реализация остановки по граничному случаю из условия: "если в первых выполненных m задачах
+		// Остановка по граничному случаю из условия: "если в первых выполненных m задачах
 		// (или вообще всех) происходят ошибки, то всего выполнится не более n+m задач."
-		if errCount != 0 && completedTasksCount.getCount() == m+n {
+		if errCount != 0 && completedTasksCount == m+n {
 			break
 		}
 	}
@@ -101,9 +90,9 @@ func Run(tasks []Task, n, m int) error {
 
 func worker(
 	taskChanel chan Task,
+	completedTasksCh chan struct{},
 	errChanel chan error,
 	done chan struct{},
-	count *CompletedTasksCount,
 	wg *sync.WaitGroup,
 ) {
 	defer wg.Done()
@@ -123,7 +112,11 @@ func worker(
 					return
 				}
 			} else {
-				count.increase()
+				select {
+				case completedTasksCh <- struct{}{}:
+				case <-done:
+					return
+				}
 			}
 		}
 	}
