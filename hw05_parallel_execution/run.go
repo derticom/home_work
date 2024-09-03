@@ -22,6 +22,13 @@ func (c *CompletedTasksCount) increase() {
 	c.count++
 }
 
+func (c *CompletedTasksCount) getCount() int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	return c.count
+}
+
 // Run starts tasks in n goroutines and stops its work when receiving m errors from tasks.
 func Run(tasks []Task, n, m int) error {
 	var (
@@ -71,13 +78,13 @@ func Run(tasks []Task, n, m int) error {
 			break
 		}
 
-		if completedTasksCount.count == len(tasks)-errCount {
+		if completedTasksCount.getCount() == len(tasks)-errCount {
 			break
 		}
 
 		// Реализация остановки по граничному случаю из условия: "если в первых выполненных m задачах
 		// (или вообще всех) происходят ошибки, то всего выполнится не более n+m задач."
-		if errCount != 0 && completedTasksCount.count == m+n {
+		if errCount != 0 && completedTasksCount.getCount() == m+n {
 			break
 		}
 	}
