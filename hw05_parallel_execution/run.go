@@ -9,7 +9,7 @@ var ErrErrorsLimitExceeded = errors.New("errors limit exceeded")
 
 type Task func() error
 
-// CompletedTasksCount структура для подсчета выполненных задач
+// CompletedTasksCount структура для подсчета выполненных задач.
 type CompletedTasksCount struct {
 	count int
 	mu    sync.Mutex
