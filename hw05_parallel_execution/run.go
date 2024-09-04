@@ -12,8 +12,9 @@ type Task func() error
 // Run starts tasks in n goroutines and stops its work when receiving m errors from tasks.
 func Run(tasks []Task, n, m int) error {
 	var (
-		completedTasksCount int // Счетчик выполненных задач.
-		errCount            int // Счетчик ошибок.
+		completedTasksCount int  // Счетчик выполненных задач.
+		errCount            int  // Счетчик ошибок.
+		boundaryCase        bool // Флаг наличия ошибок при выполнении m задач.
 		wg                  sync.WaitGroup
 	)
 
@@ -73,7 +74,10 @@ func Run(tasks []Task, n, m int) error {
 
 		// Остановка по граничному случаю из условия: "если в первых выполненных m задачах
 		// (или вообще всех) происходят ошибки, то всего выполнится не более n+m задач."
-		if errCount != 0 && completedTasksCount == m+n {
+		if maxErrors != 0 && errCount != 0 && completedTasksCount == m {
+			boundaryCase = true
+		}
+		if boundaryCase && completedTasksCount == m+n {
 			break
 		}
 	}

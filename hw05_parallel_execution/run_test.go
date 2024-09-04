@@ -68,6 +68,56 @@ func TestRun(t *testing.T) {
 		require.Equal(t, runTasksCount, int32(tasksCount), "not all tasks were completed")
 		require.LessOrEqual(t, int64(elapsedTime), int64(sumTime/2), "tasks were run sequentially?")
 	})
+
+	t.Run("without errors", func(t *testing.T) {
+		taskList := []Task{
+			func() error { return nil },
+			func() error { return nil },
+			func() error { return nil },
+		}
+
+		err := Run(taskList, 2, 1)
+		require.NoError(t, err)
+	})
+
+	t.Run("with errors but below the limit", func(t *testing.T) {
+		taskList := []Task{
+			func() error { return nil },
+			func() error { return errors.New("error 1") },
+			func() error { return nil },
+			func() error { return errors.New("error 2") },
+			func() error { return nil },
+		}
+
+		err := Run(taskList, 3, 3)
+		require.NoError(t, err)
+	})
+
+	t.Run("errors exceed limit", func(t *testing.T) {
+		taskList := []Task{
+			func() error { return nil },
+			func() error { return errors.New("error 1") },
+			func() error { return errors.New("error 2") },
+			func() error { return nil },
+			func() error { return errors.New("error 3") },
+		}
+
+		err := Run(taskList, 2, 2)
+		require.Error(t, err)
+		require.Equal(t, ErrErrorsLimitExceeded, err)
+	})
+
+	t.Run("all tasks have errors", func(t *testing.T) {
+		taskList := []Task{
+			func() error { return errors.New("error 1") },
+			func() error { return errors.New("error 2") },
+			func() error { return errors.New("error 3") },
+		}
+
+		err := Run(taskList, 2, 1)
+		require.Error(t, err)
+		require.Equal(t, ErrErrorsLimitExceeded, err)
+	})
 }
 
 func Test_getMaxErrorsQuantity(t *testing.T) {
