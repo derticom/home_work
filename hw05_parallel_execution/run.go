@@ -77,7 +77,7 @@ func Run(tasks []Task, n, m int) error {
 		if maxErrors != 0 && errCount != 0 && completedTasksCount == m {
 			boundaryCase = true
 		}
-		if boundaryCase && completedTasksCount == m+n {
+		if boundaryCase && completedTasksCount+errCount == m+n {
 			break
 		}
 	}
