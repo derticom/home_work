@@ -52,14 +52,11 @@ func Run(tasks []Task, n, m int) error {
 
 	// Цикл с логикой управления остановкой функции.
 	for {
-		select {
-		case result := <-completeStatusCh:
-			if result {
-				completedTasksCount++
-			} else {
-				errCount++
-			}
-
+		result := <-completeStatusCh
+		if result {
+			completedTasksCount++
+		} else {
+			errCount++
 		}
 
 		// Остановка при выполнении всех задач.
