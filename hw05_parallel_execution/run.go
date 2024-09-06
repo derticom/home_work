@@ -12,9 +12,8 @@ type Task func() error
 // Run starts tasks in n goroutines and stops its work when receiving m errors from tasks.
 func Run(tasks []Task, n, m int) error {
 	var (
-		completedTasksCount int  // Счетчик выполненных задач.
-		errCount            int  // Счетчик ошибок.
-		boundaryCase        bool // Флаг наличия ошибок при выполнении m задач.
+		completedTasksCount int // Счетчик выполненных задач.
+		errCount            int // Счетчик ошибок.
 		wg                  sync.WaitGroup
 	)
 
@@ -22,15 +21,13 @@ func Run(tasks []Task, n, m int) error {
 
 	done := make(chan struct{})
 	tasksCh := make(chan Task)
-	completedTasksCh := make(chan struct{})
-	defer close(completedTasksCh)
-	errCh := make(chan error)
-	defer close(errCh)
+	completeStatusCh := make(chan bool)
+	defer close(completeStatusCh)
 
 	// Запуск воркеров.
 	for i := 0; i < n; i++ {
 		wg.Add(1)
-		go worker(tasksCh, completedTasksCh, errCh, done, &wg)
+		go worker(tasksCh, completeStatusCh, done, &wg)
 	}
 
 	// Отправка задач воркерам.
@@ -56,15 +53,13 @@ func Run(tasks []Task, n, m int) error {
 	// Цикл с логикой управления остановкой функции.
 	for {
 		select {
-		case <-completedTasksCh:
-			completedTasksCount++
-		case <-errCh:
-			errCount++
-		}
+		case result := <-completeStatusCh:
+			if result {
+				completedTasksCount++
+			} else {
+				errCount++
+			}
 
-		// Остановка при достижении макс. кол-ва ошибок.
-		if maxErrors != 0 && errCount == maxErrors {
-			break
 		}
 
 		// Остановка при выполнении всех задач.
@@ -72,12 +67,8 @@ func Run(tasks []Task, n, m int) error {
 			break
 		}
 
-		// Остановка по граничному случаю из условия: "если в первых выполненных m задачах
-		// (или вообще всех) происходят ошибки, то всего выполнится не более n+m задач."
-		if maxErrors != 0 && errCount != 0 && completedTasksCount == m {
-			boundaryCase = true
-		}
-		if boundaryCase && completedTasksCount+errCount == m+n {
+		// Остановка по достижению максимального количества ошибок.
+		if maxErrors != 0 && errCount == maxErrors {
 			break
 		}
 	}
@@ -94,8 +85,7 @@ func Run(tasks []Task, n, m int) error {
 
 func worker(
 	taskChanel chan Task,
-	completedTasksCh chan struct{},
-	errChanel chan error,
+	completeStatusCh chan bool,
 	done chan struct{},
 	wg *sync.WaitGroup,
 ) {
@@ -111,13 +101,13 @@ func worker(
 			}
 			if err := task(); err != nil {
 				select {
-				case errChanel <- err:
+				case completeStatusCh <- false:
 				case <-done:
 					return
 				}
 			} else {
 				select {
-				case completedTasksCh <- struct{}{}:
+				case completeStatusCh <- true:
 				case <-done:
 					return
 				}
