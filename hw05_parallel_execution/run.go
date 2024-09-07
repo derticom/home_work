@@ -35,17 +35,11 @@ func Run(tasks []Task, n, m int) error {
 	go func() {
 		defer close(tasksCh)
 		defer wg.Done()
-
 		for _, task := range tasks {
 			select {
+			case tasksCh <- task:
 			case <-done:
-				break
-			default:
-				select {
-				case tasksCh <- task:
-				case <-done:
-					return
-				}
+				return
 			}
 		}
 	}()
@@ -96,18 +90,11 @@ func worker(
 			if !ok {
 				continue
 			}
-			if err := task(); err != nil {
-				select {
-				case completeStatusCh <- false:
-				case <-done:
-					return
-				}
-			} else {
-				select {
-				case completeStatusCh <- true:
-				case <-done:
-					return
-				}
+			err := task()
+			select {
+			case completeStatusCh <- err == nil:
+			case <-done:
+				return
 			}
 		}
 	}
