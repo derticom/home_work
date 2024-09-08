@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	//nolint:depguard // Применение 'require' необходимо для тестирования.
 	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
 )
@@ -67,4 +68,88 @@ func TestRun(t *testing.T) {
 		require.Equal(t, runTasksCount, int32(tasksCount), "not all tasks were completed")
 		require.LessOrEqual(t, int64(elapsedTime), int64(sumTime/2), "tasks were run sequentially?")
 	})
+
+	t.Run("without errors", func(t *testing.T) {
+		taskList := []Task{
+			func() error { return nil },
+			func() error { return nil },
+			func() error { return nil },
+		}
+
+		err := Run(taskList, 2, 1)
+		require.NoError(t, err)
+	})
+
+	t.Run("with errors but below the limit", func(t *testing.T) {
+		taskList := []Task{
+			func() error { return nil },
+			func() error { return errors.New("error 1") },
+			func() error { return nil },
+			func() error { return errors.New("error 2") },
+			func() error { return nil },
+		}
+
+		err := Run(taskList, 3, 3)
+		require.NoError(t, err)
+	})
+
+	t.Run("errors exceed limit", func(t *testing.T) {
+		taskList := []Task{
+			func() error { return nil },
+			func() error { return errors.New("error 1") },
+			func() error { return errors.New("error 2") },
+			func() error { return nil },
+			func() error { return errors.New("error 3") },
+		}
+
+		err := Run(taskList, 2, 2)
+		require.Error(t, err)
+		require.Equal(t, ErrErrorsLimitExceeded, err)
+	})
+
+	t.Run("all tasks have errors", func(t *testing.T) {
+		taskList := []Task{
+			func() error { return errors.New("error 1") },
+			func() error { return errors.New("error 2") },
+			func() error { return errors.New("error 3") },
+		}
+
+		err := Run(taskList, 2, 1)
+		require.Error(t, err)
+		require.Equal(t, ErrErrorsLimitExceeded, err)
+	})
+}
+
+func Test_getMaxErrorsQuantity(t *testing.T) {
+	type args struct {
+		m int
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			"five",
+			args{5},
+			5,
+		},
+		{
+			"zero",
+			args{0},
+			0,
+		},
+		{
+			"negative",
+			args{-5},
+			0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := getMaxErrorsQuantity(tt.args.m); got != tt.want {
+				t.Errorf("getMaxErrorsQuantity() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
