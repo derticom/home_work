@@ -3,6 +3,7 @@ package hw04lrucache
 import (
 	"testing"
 
+	//nolint:depguard // Применение 'require' необходимо для тестирования.
 	"github.com/stretchr/testify/require"
 )
 
