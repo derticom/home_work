@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	//nolint:depguard // Применение 'require' необходимо для тестирования.
 	"github.com/stretchr/testify/require"
 )
 
@@ -50,7 +51,72 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("purge logic", func(t *testing.T) {
-		// Write me
+		c := NewCache(2)
+
+		wasInCache := c.Set("aaa", 100)
+		require.False(t, wasInCache)
+
+		wasInCache = c.Set("bbb", 200)
+		require.False(t, wasInCache)
+
+		c.Clear()
+
+		_, ok := c.Get("aaa")
+		require.False(t, ok)
+
+		_, ok = c.Get("bbb")
+		require.False(t, ok)
+	})
+
+	t.Run("displacement oldest logic", func(t *testing.T) {
+		c := NewCache(3)
+
+		wasInCache := c.Set("one", 100)
+		require.False(t, wasInCache)
+
+		wasInCache = c.Set("two", 200)
+		require.False(t, wasInCache)
+
+		wasInCache = c.Set("three", 300)
+		require.False(t, wasInCache)
+
+		val, ok := c.Get("one")
+		require.True(t, ok)
+		require.Equal(t, 100, val)
+
+		wasInCache = c.Set("four", 400)
+		require.False(t, wasInCache)
+
+		_, ok = c.Get("two")
+		require.False(t, ok)
+
+		_, ok = c.Get("one")
+		require.True(t, ok)
+	})
+
+	t.Run("displacement not used logic", func(t *testing.T) {
+		c := NewCache(3)
+
+		wasInCache := c.Set("one", 100)
+		require.False(t, wasInCache)
+
+		wasInCache = c.Set("two", 200)
+		require.False(t, wasInCache)
+
+		wasInCache = c.Set("three", 300)
+		require.False(t, wasInCache)
+
+		wasInCache = c.Set("four", 400)
+		require.False(t, wasInCache)
+
+		wasInCache = c.Set("five", 500)
+		require.False(t, wasInCache)
+
+		_, ok := c.Get("one")
+		require.False(t, ok)
+
+		_, ok = c.Get("five")
+		require.True(t, ok)
 	})
 }
 
