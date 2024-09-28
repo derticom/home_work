@@ -61,7 +61,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 
 	_, err = io.CopyN(destination, barReader, limit)
 	if err != nil && !errors.Is(err, io.EOF) {
-		return errors.Wrap(err, "failed to copy data")
+		return errors.Wrap(err, "failed to io.CopyN")
 	}
 
 	bar.Finish()
