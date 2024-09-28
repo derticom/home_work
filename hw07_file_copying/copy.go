@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/cheggaaa/pb/v3"
 	"github.com/pkg/errors"
 )
 
@@ -47,24 +48,21 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		return errors.Wrap(err, "failed to sourceFile.Seek")
 	}
 
-	buf := make([]byte, limit)
-
-	var totalRead int64
-	for totalRead != limit {
-		n, err := sourceFile.Read(buf[totalRead:])
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return errors.Wrap(err, "failed to sourceFile.Read")
-		}
-		totalRead += int64(n)
-	}
-
-	err = os.WriteFile(toPath, buf, 0755)
+	destination, err := os.Create(toPath)
 	if err != nil {
-		return errors.Wrap(err, "failed to os.WriteFile")
+		return errors.Wrap(err, "failed to os.Create")
 	}
+	defer destination.Close()
+
+	bar := pb.Full.Start64(limit)
+	barReader := bar.NewProxyReader(sourceFile)
+
+	_, err = io.CopyN(destination, barReader, limit)
+	if err != nil && err != io.EOF {
+		return errors.Wrap(err, "failed to copy data")
+	}
+
+	bar.Finish()
 
 	return nil
 }
