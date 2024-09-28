@@ -4,9 +4,11 @@ import (
 	"io"
 	"os"
 
-	"github.com/cheggaaa/pb/v3"
-	"github.com/pkg/errors"
+	"github.com/cheggaaa/pb/v3" //nolint: depguard // import is necessary
+	"github.com/pkg/errors"     //nolint: depguard // import is necessary
 )
+
+const filePermission = 0o644
 
 var (
 	ErrUnsupportedFile       = errors.New("unsupported file")
@@ -14,7 +16,7 @@ var (
 )
 
 func Copy(fromPath, toPath string, offset, limit int64) error {
-	sourceFile, err := os.OpenFile(fromPath, os.O_RDONLY, 0644)
+	sourceFile, err := os.OpenFile(fromPath, os.O_RDONLY, filePermission)
 	if err != nil {
 		return ErrUnsupportedFile
 	}
@@ -58,7 +60,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	barReader := bar.NewProxyReader(sourceFile)
 
 	_, err = io.CopyN(destination, barReader, limit)
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return errors.Wrap(err, "failed to copy data")
 	}
 

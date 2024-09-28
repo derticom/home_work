@@ -1,12 +1,14 @@
 package main
 
 import (
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"  //nolint: depguard // import is necessary
+	"github.com/stretchr/testify/require" //nolint: depguard // import is necessary
 )
+
+const dirPermission = 0o755
 
 var (
 	fromPath = "./testdata/input.txt"
@@ -95,7 +97,7 @@ func TestCopy(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := os.Mkdir("./tmp", 0755)
+			err := os.Mkdir("./tmp", dirPermission)
 			require.NoError(t, err)
 
 			defer func() {
