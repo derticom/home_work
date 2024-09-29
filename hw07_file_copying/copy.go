@@ -3,6 +3,7 @@ package main
 import (
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/cheggaaa/pb/v3" //nolint: depguard // import is necessary
 	"github.com/pkg/errors"     //nolint: depguard // import is necessary
@@ -76,7 +77,17 @@ func validateInput(fromPath, toPath string, offset, limit int64) error {
 		return ErrInvalidInput
 	}
 
-	if fromPath == toPath {
+	absFromPath, err := filepath.Abs(fromPath)
+	if err != nil {
+		return errors.Wrap(err, "failed to filepath.Abs")
+	}
+
+	absToPath, err := filepath.Abs(toPath)
+	if err != nil {
+		return errors.Wrap(err, "failed to filepath.Abs")
+	}
+
+	if absFromPath == absToPath {
 		return ErrTheSamePath
 	}
 
