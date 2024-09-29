@@ -13,12 +13,18 @@ const filePermission = 0o644
 var (
 	ErrUnsupportedFile       = errors.New("unsupported file")
 	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
+	ErrTheSamePath           = errors.New("source and destination are the same")
+	ErrInvalidInput          = errors.New("invalid input")
 )
 
 func Copy(fromPath, toPath string, offset, limit int64) error {
+	if err := validateInput(fromPath, toPath, offset, limit); err != nil {
+		return err
+	}
+
 	sourceFile, err := os.OpenFile(fromPath, os.O_RDONLY, filePermission)
 	if err != nil {
-		return ErrUnsupportedFile
+		return errors.Wrap(err, "failed to os.OpenFile")
 	}
 	defer sourceFile.Close()
 
@@ -33,15 +39,11 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	}
 
 	// программа может НЕ обрабатывать файлы, у которых неизвестна длина (например, /dev/urandom)
-	if sourceFileInfo.Size() == 0 {
-		return errors.New("unknown len source file")
+	if !sourceFileInfo.Mode().IsRegular() {
+		return ErrUnsupportedFile
 	}
 
-	if limit > sourceFileInfo.Size()-offset {
-		limit = sourceFileInfo.Size() - offset
-	}
-
-	if limit == 0 {
+	if limit > sourceFileInfo.Size()-offset || limit == 0 {
 		limit = sourceFileInfo.Size() - offset
 	}
 
@@ -66,5 +68,20 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 
 	bar.Finish()
 
+	return nil
+}
+
+func validateInput(fromPath, toPath string, offset, limit int64) error {
+	if fromPath == "" || toPath == "" {
+		return ErrInvalidInput
+	}
+
+	if fromPath == toPath {
+		return ErrTheSamePath
+	}
+
+	if offset < 0 || limit < 0 {
+		return ErrInvalidInput
+	}
 	return nil
 }

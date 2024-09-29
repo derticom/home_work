@@ -25,8 +25,8 @@ func TestCopy(t *testing.T) {
 	tests := []struct {
 		name     string
 		args     args
-		wantErr  bool
 		wantFile string
+		wantErr  error
 	}{
 		{
 			name: "offset 0, limit 0",
@@ -36,8 +36,8 @@ func TestCopy(t *testing.T) {
 				offset:   0,
 				limit:    0,
 			},
-			wantErr:  false,
 			wantFile: "testdata/out_offset0_limit0.txt",
+			wantErr:  nil,
 		},
 		{
 			name: "offset 0, limit 10",
@@ -47,8 +47,8 @@ func TestCopy(t *testing.T) {
 				offset:   0,
 				limit:    10,
 			},
-			wantErr:  false,
 			wantFile: "testdata/out_offset0_limit10.txt",
+			wantErr:  nil,
 		},
 		{
 			name: "offset 0, limit 1000",
@@ -58,8 +58,8 @@ func TestCopy(t *testing.T) {
 				offset:   0,
 				limit:    1000,
 			},
-			wantErr:  false,
 			wantFile: "testdata/out_offset0_limit1000.txt",
+			wantErr:  nil,
 		},
 		{
 			name: "offset 0, limit 10000",
@@ -69,8 +69,8 @@ func TestCopy(t *testing.T) {
 				offset:   0,
 				limit:    10000,
 			},
-			wantErr:  false,
 			wantFile: "testdata/out_offset0_limit10000.txt",
+			wantErr:  nil,
 		},
 		{
 			name: "offset 100, limit 1000",
@@ -80,8 +80,8 @@ func TestCopy(t *testing.T) {
 				offset:   100,
 				limit:    1000,
 			},
-			wantErr:  false,
 			wantFile: "testdata/out_offset100_limit1000.txt",
+			wantErr:  nil,
 		},
 		{
 			name: "offset 6000, limit 1000",
@@ -91,8 +91,28 @@ func TestCopy(t *testing.T) {
 				offset:   6000,
 				limit:    1000,
 			},
-			wantErr:  false,
 			wantFile: "testdata/out_offset6000_limit1000.txt",
+			wantErr:  nil,
+		},
+		{
+			name: "error - the same path",
+			args: args{
+				fromPath: fromPath,
+				toPath:   fromPath,
+				offset:   0,
+				limit:    0,
+			},
+			wantErr: ErrTheSamePath,
+		},
+		{
+			name: "error - invalid limit",
+			args: args{
+				fromPath: fromPath,
+				toPath:   toPath,
+				offset:   0,
+				limit:    -1000,
+			},
+			wantErr: ErrInvalidInput,
 		},
 	}
 	for _, tt := range tests {
@@ -106,7 +126,12 @@ func TestCopy(t *testing.T) {
 			}()
 
 			err = Copy(tt.args.fromPath, tt.args.toPath, tt.args.offset, tt.args.limit)
-			assert.NoError(t, err)
+			if tt.wantErr != nil {
+				require.ErrorIs(t, err, tt.wantErr)
+				return
+			} else {
+				require.NoError(t, err)
+			}
 
 			gotFile, err := os.ReadFile(tt.args.toPath)
 			require.NoError(t, err)
