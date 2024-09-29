@@ -129,9 +129,8 @@ func TestCopy(t *testing.T) {
 			if tt.wantErr != nil {
 				require.ErrorIs(t, err, tt.wantErr)
 				return
-			} else {
-				require.NoError(t, err)
 			}
+			require.NoError(t, err)
 
 			gotFile, err := os.ReadFile(tt.args.toPath)
 			require.NoError(t, err)
