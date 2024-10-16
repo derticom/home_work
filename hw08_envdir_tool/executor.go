@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 	"os/exec"
+
+	"github.com/pkg/errors" //nolint: depguard // import is necessary
 )
 
 // RunCmd runs a command + arguments (cmd) with environment variables from env.
@@ -32,6 +34,10 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 	err := execCmd.Run()
 	if err != nil {
 		log.Println("failed to execCmd.Run")
+		var exitError *exec.ExitError
+		if errors.As(err, &exitError) {
+			return exitError.ExitCode()
+		}
 		return 1
 	}
 
