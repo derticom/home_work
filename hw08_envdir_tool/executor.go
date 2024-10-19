@@ -1,32 +1,37 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/pkg/errors" //nolint: depguard // import is necessary
 )
 
 // RunCmd runs a command + arguments (cmd) with environment variables from env.
 func RunCmd(cmd []string, env Environment) (returnCode int) {
+	execCmd := exec.Command(cmd[0], cmd[1:]...) // #nosec G204
+
+	execCmd.Env = os.Environ()
+
 	for key, envValue := range env {
-		if env[key].NeedRemove {
-			err := os.Unsetenv(key)
-			if err != nil {
-				log.Printf("failed to os.Unsetenv for key %v", key)
-				return 1
+		index := -1
+		for i, s := range execCmd.Env {
+			if strings.HasPrefix(s, fmt.Sprintf("%s=", key)) {
+				index = i
+				break
 			}
-			continue
 		}
-		err := os.Setenv(key, envValue.Value)
-		if err != nil {
-			log.Printf("failed to os.Setenv for key %v", key)
-			return 1
+		if index != -1 {
+			execCmd.Env = append(execCmd.Env[:index], execCmd.Env[index+1:]...)
+		}
+
+		if !envValue.NeedRemove {
+			execCmd.Env = append(execCmd.Env, fmt.Sprintf("%s=%s", key, envValue.Value))
 		}
 	}
-
-	execCmd := exec.Command(cmd[0], cmd[1:]...) // #nosec G204
 
 	execCmd.Stdout = os.Stdout
 	execCmd.Stderr = os.Stderr

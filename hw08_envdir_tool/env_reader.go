@@ -58,8 +58,7 @@ func ReadDir(dir string) (Environment, error) {
 		fileContentString = strings.Split(fileContentString, "\n")[0]
 
 		// пробелы и табуляция в конце T удаляются
-		fileContentString = strings.TrimRight(fileContentString, "\t")
-		fileContentString = strings.TrimRight(fileContentString, " ")
+		fileContentString = strings.TrimRight(fileContentString, " \t")
 
 		// терминальные нули (0x00) заменяются на перевод строки (\n)
 		fileContentString = strings.ReplaceAll(fileContentString, string([]byte{0}), "\n")
