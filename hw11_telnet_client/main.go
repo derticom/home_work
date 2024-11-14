@@ -35,12 +35,11 @@ func main() {
 	if err := client.Connect(); err != nil {
 		log.Fatal("failed to client.Connect:", err)
 	}
-	defer func(client TelnetClient) {
-		err := client.Close()
-		if err != nil {
+	defer func() {
+		if err := client.Close(); err != nil {
 			log.Println("failed to client.Close:", err)
 		}
-	}(client)
+	}()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT)
@@ -48,32 +47,24 @@ func main() {
 	errChan := make(chan error, 1)
 
 	go func() {
-		err := client.Send()
-		if err != nil {
-			if !errors.Is(err, io.EOF) {
-				errChan <- errors.WithMessage(err, "failed to client.Send")
-				return
-			}
-
-			return
+		if err := client.Send(); err != nil && !errors.Is(err, io.EOF) {
+			errChan <- errors.WithMessage(err, "failed to client.Send")
+		} else {
+			sigChan <- syscall.SIGINT
 		}
 	}()
 
 	go func() {
-		if err := client.Receive(); err != nil {
-			if errors.Is(err, io.EOF) {
-				log.Println("connection closed by peer")
-			} else {
-				errChan <- errors.WithMessage(err, "failed to client.Receive")
-			}
-
-			return
+		if err := client.Receive(); err != nil && !errors.Is(err, io.EOF) {
+			errChan <- errors.WithMessage(err, "failed to client.Receive")
+		} else {
+			sigChan <- syscall.SIGINT
 		}
 	}()
 
 	select {
 	case <-sigChan:
-		return
+		log.Println("shut down")
 	case err := <-errChan:
 		log.Printf("critical error, %+v", err)
 	}
