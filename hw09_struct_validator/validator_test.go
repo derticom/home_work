@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	//nolint:depguard // Применение 'require' необходимо для тестирования.
 	"github.com/stretchr/testify/require"
 )
 

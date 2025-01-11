@@ -11,12 +11,12 @@ import (
 )
 
 var (
-	errProgram        error = fmt.Errorf("program error occurred during validation")
-	errValueNotInSet        = fmt.Errorf("value is not in given set")
-	errRegexpMismatch       = fmt.Errorf("value does not match to regexp")
-	errLessThanMin          = fmt.Errorf("value is less than min")
-	errBiggerThanMax        = fmt.Errorf("value is bigger than max")
-	errLengthNotEqual       = fmt.Errorf("value is not equal to length")
+	errProgram        = fmt.Errorf("program error occurred during validation")
+	errValueNotInSet  = fmt.Errorf("value is not in given set")
+	errRegexpMismatch = fmt.Errorf("value does not match to regexp")
+	errLessThanMin    = fmt.Errorf("value is less than min")
+	errBiggerThanMax  = fmt.Errorf("value is bigger than max")
+	errLengthNotEqual = fmt.Errorf("value is not equal to length")
 )
 
 type ValidationError struct {
@@ -34,6 +34,7 @@ func (v ValidationErrors) Error() string {
 	return allErrors
 }
 
+//nolint:gocognit // Высокая когнитивная сложность обусловлена необходимостью обработки множества валидаторов.
 func Validate(v interface{}) error {
 	errs := ValidationErrors{}
 
@@ -111,7 +112,6 @@ func Validate(v interface{}) error {
 			default:
 				return fmt.Errorf("unknown validator name: %s", validatorName)
 			}
-
 		}
 	}
 
@@ -119,18 +119,19 @@ func Validate(v interface{}) error {
 }
 
 func validateLen(fieldType reflect.Type, fieldValue reflect.Value, validatorValue string) error {
-	if fieldType.Kind() == reflect.String {
+	switch {
+	case fieldType.Kind() == reflect.String:
 		if err := validateStringLen(fieldValue.String(), validatorValue); err != nil {
 			return err
 		}
-	} else if fieldType.Kind() == reflect.Slice && fieldType.Elem().Kind() == reflect.String {
+	case fieldType.Kind() == reflect.Slice && fieldType.Elem().Kind() == reflect.String:
 		strSlice := fieldValue.Interface().([]string)
 		for _, str := range strSlice {
 			if err := validateStringLen(str, validatorValue); err != nil {
 				return err
 			}
 		}
-	} else {
+	default:
 		return fmt.Errorf("wrong type, string expected")
 	}
 
@@ -138,18 +139,19 @@ func validateLen(fieldType reflect.Type, fieldValue reflect.Value, validatorValu
 }
 
 func validateMax(fieldType reflect.Type, fieldValue reflect.Value, validatorValue string) error {
-	if fieldType.Kind() == reflect.Int {
+	switch {
+	case fieldType.Kind() == reflect.Int:
 		if err := validateIntMax(fieldValue.Int(), validatorValue); err != nil {
 			return err
 		}
-	} else if fieldType.Kind() == reflect.Slice && fieldType.Elem().Kind() == reflect.Int {
+	case fieldType.Kind() == reflect.Slice && fieldType.Elem().Kind() == reflect.Int:
 		intSlice := fieldValue.Interface().([]int)
 		for _, intVal := range intSlice {
 			if err := validateIntMax(int64(intVal), validatorValue); err != nil {
 				return err
 			}
 		}
-	} else {
+	default:
 		return fmt.Errorf("wrong type, int expected")
 	}
 
@@ -157,18 +159,19 @@ func validateMax(fieldType reflect.Type, fieldValue reflect.Value, validatorValu
 }
 
 func validateMin(fieldType reflect.Type, fieldValue reflect.Value, validatorValue string) error {
-	if fieldType.Kind() == reflect.Int {
+	switch {
+	case fieldType.Kind() == reflect.Int:
 		if err := validateIntMin(fieldValue.Int(), validatorValue); err != nil {
 			return err
 		}
-	} else if fieldType.Kind() == reflect.Slice && fieldType.Elem().Kind() == reflect.Int {
+	case fieldType.Kind() == reflect.Slice && fieldType.Elem().Kind() == reflect.Int:
 		intSlice := fieldValue.Interface().([]int)
 		for _, intVal := range intSlice {
 			if err := validateIntMin(int64(intVal), validatorValue); err != nil {
 				return err
 			}
 		}
-	} else {
+	default:
 		return fmt.Errorf("wrong type, int expected")
 	}
 
@@ -176,18 +179,19 @@ func validateMin(fieldType reflect.Type, fieldValue reflect.Value, validatorValu
 }
 
 func validateRegexp(fieldType reflect.Type, fieldValue reflect.Value, validatorValue string) error {
-	if fieldType.Kind() == reflect.String {
+	switch {
+	case fieldType.Kind() == reflect.String:
 		if err := validateStringRegexp(fieldValue.String(), validatorValue); err != nil {
 			return err
 		}
-	} else if fieldType.Kind() == reflect.Slice && fieldType.Elem().Kind() == reflect.String {
+	case fieldType.Kind() == reflect.Slice && fieldType.Elem().Kind() == reflect.String:
 		strSlice := fieldValue.Interface().([]string)
 		for _, str := range strSlice {
 			if err := validateStringRegexp(str, validatorValue); err != nil {
 				return err
 			}
 		}
-	} else {
+	default:
 		return fmt.Errorf("wrong type, string expected")
 	}
 
@@ -195,29 +199,30 @@ func validateRegexp(fieldType reflect.Type, fieldValue reflect.Value, validatorV
 }
 
 func validateIn(fieldType reflect.Type, fieldValue reflect.Value, validatorValue string) error {
-	if fieldType.Kind() == reflect.Int {
+	switch {
+	case fieldType.Kind() == reflect.Int:
 		if err := validateIntIn(fieldValue.Int(), validatorValue); err != nil {
 			return err
 		}
-	} else if fieldType.Kind() == reflect.Slice && fieldType.Elem().Kind() == reflect.Int {
+	case fieldType.Kind() == reflect.Slice && fieldType.Elem().Kind() == reflect.Int:
 		intSlice := fieldValue.Interface().([]int)
 		for _, intVal := range intSlice {
 			if err := validateIntIn(int64(intVal), validatorValue); err != nil {
 				return err
 			}
 		}
-	} else if fieldType.Kind() == reflect.String {
+	case fieldType.Kind() == reflect.String:
 		if err := validateStrIn(fieldValue.String(), validatorValue); err != nil {
 			return err
 		}
-	} else if fieldType.Kind() == reflect.Slice && fieldType.Elem().Kind() == reflect.String {
+	case fieldType.Kind() == reflect.Slice && fieldType.Elem().Kind() == reflect.String:
 		strSlice := fieldValue.Interface().([]string)
 		for _, strVal := range strSlice {
 			if err := validateStrIn(strVal, validatorValue); err != nil {
 				return err
 			}
 		}
-	} else {
+	default:
 		return fmt.Errorf("wrong type, string or int expected")
 	}
 
