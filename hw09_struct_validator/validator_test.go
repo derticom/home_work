@@ -2,8 +2,9 @@ package hw09structvalidator
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 type UserRole string
@@ -38,23 +39,77 @@ type (
 
 func TestValidate(t *testing.T) {
 	tests := []struct {
-		in          interface{}
-		expectedErr error
+		name    string
+		in      interface{}
+		wantErr error
 	}{
 		{
-			// Place your code here.
+			name: "ok case",
+			in: User{
+				ID:     "163746583764hdt38495483u2hdtyrb3748f",
+				Name:   "Mike",
+				Age:    35,
+				Email:  "mile@gmail.com",
+				Role:   "admin",
+				Phones: []string{"12345678901", "77345678901"},
+			},
+			wantErr: ValidationErrors{},
 		},
-		// ...
-		// Place your code here.
+		{
+			name: "Age older then max",
+			in: User{
+				ID:     "163746583764hdt38495483u2hdtyrb3748f",
+				Name:   "Mike",
+				Age:    55,
+				Email:  "mile@gmail.com",
+				Role:   "admin",
+				Phones: []string{"12345678901", "77345678901"},
+			},
+			wantErr: ValidationErrors{
+				ValidationError{
+					Field: "Age",
+					Err:   errBiggerThanMax,
+				},
+			},
+		},
+		{
+			name: "All incorrect",
+			in: User{
+				ID:     "123",
+				Name:   "Mike",
+				Age:    88,
+				Email:  "gmail.com",
+				Role:   "user",
+				Phones: []string{"123456701"},
+			},
+			wantErr: ValidationErrors{
+				ValidationError{
+					Field: "ID",
+					Err:   errLengthNotEqual,
+				},
+				ValidationError{
+					Field: "Age",
+					Err:   errBiggerThanMax,
+				},
+				ValidationError{
+					Field: "Email",
+					Err:   errRegexpMismatch,
+				},
+				ValidationError{
+					Field: "Role",
+					Err:   errValueNotInSet,
+				},
+				ValidationError{
+					Field: "Phones",
+					Err:   errLengthNotEqual,
+				},
+			},
+		},
 	}
-
-	for i, tt := range tests {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			tt := tt
-			t.Parallel()
-
-			// Place your code here.
-			_ = tt
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := Validate(tt.in)
+			require.Equal(t, tt.wantErr, err)
 		})
 	}
 }
