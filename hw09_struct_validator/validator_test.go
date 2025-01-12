@@ -45,7 +45,7 @@ func TestValidate(t *testing.T) {
 		wantErr error
 	}{
 		{
-			name: "ok case",
+			name: "Ok case - User",
 			in: User{
 				ID:     "163746583764hdt38495483u2hdtyrb3748f",
 				Name:   "Mike",
@@ -57,7 +57,7 @@ func TestValidate(t *testing.T) {
 			wantErr: ValidationErrors{},
 		},
 		{
-			name: "Age older then max",
+			name: "Age older then max - User",
 			in: User{
 				ID:     "163746583764hdt38495483u2hdtyrb3748f",
 				Name:   "Mike",
@@ -74,7 +74,7 @@ func TestValidate(t *testing.T) {
 			},
 		},
 		{
-			name: "All incorrect",
+			name: "All incorrect - User",
 			in: User{
 				ID:     "123",
 				Name:   "Mike",
@@ -103,6 +103,45 @@ func TestValidate(t *testing.T) {
 				ValidationError{
 					Field: "Phones",
 					Err:   errLengthNotEqual,
+				},
+			},
+		},
+		{
+			name: "Ok case - App",
+			in: App{
+				Version: "12345",
+			},
+			wantErr: ValidationErrors{},
+		},
+		{
+			name: "Small len - App",
+			in: App{
+				Version: "1",
+			},
+			wantErr: ValidationErrors{
+				ValidationError{
+					Field: "Version",
+					Err:   errLengthNotEqual,
+				},
+			},
+		},
+		{
+			name: "Ok case - Response",
+			in: Response{
+				Code: 404,
+				Body: "Smth",
+			},
+			wantErr: ValidationErrors{},
+		},
+		{
+			name: "Not in - Response",
+			in: Response{
+				Code: 999,
+			},
+			wantErr: ValidationErrors{
+				ValidationError{
+					Field: "Code",
+					Err:   errValueNotInSet,
 				},
 			},
 		},
