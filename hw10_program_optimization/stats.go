@@ -2,6 +2,7 @@ package hw10programoptimization
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"strings"
 )
@@ -20,7 +21,7 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 		user := User{}
 
 		if err := decoder.Decode(&user); err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				return domainStat, nil
 			}
 			return nil, err
