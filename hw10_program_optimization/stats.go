@@ -31,8 +31,6 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 			continue
 		}
 
-		num := domainStat[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])]
-		num++
-		domainStat[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])] = num
+		domainStat[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])]++
 	}
 }
