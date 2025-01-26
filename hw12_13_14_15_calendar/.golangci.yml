@@ -1,5 +1,8 @@
 run:
   tests: true
+  build-tags:
+    - bench
+    - !bench
 
 linters-settings:
   depguard:
