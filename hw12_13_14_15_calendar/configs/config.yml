@@ -1,0 +1,6 @@
+log_level: "debug"
+use_data_base_storage: true
+postgres_url: "postgresql://postgres:password@localhost:5432/calendar?sslmode=disable"
+http_server:
+  address: "localhost:8085"
+  timeout: 30s
