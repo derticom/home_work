@@ -72,6 +72,9 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v3
 
+      - name: Install dependencies
+        run: go mod tidy
+
       - name: make lint
         run: make lint
         working-directory: hw12_13_14_15_calendar
