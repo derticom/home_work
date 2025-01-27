@@ -84,10 +84,6 @@ func (s *Server) handleMain(w http.ResponseWriter, r *http.Request) {
 	_, err := w.Write([]byte("hello world"))
 	if err != nil {
 		s.log.Error("failed to write response", "error", err)
-		_, err := fmt.Fprintf(w, "failed to write response")
-		if err != nil {
-			s.log.Error("failed to write response", "error", err)
-		}
 		return
 	}
 

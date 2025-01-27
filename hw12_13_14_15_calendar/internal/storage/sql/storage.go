@@ -56,8 +56,8 @@ func (s *Storage) Migrate(migrate string) (err error) {
 
 func (s *Storage) Add(ctx context.Context, event model.Event) error {
 	query := `
-		INSERT INTO events (id, header, date, duration, description, user_id, notify_before)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)`
+		INSERT INTO events (id, header, date, duration, description, notify_before)
+		VALUES ($1, $2, $3, $4, $5, $6)`
 
 	_, err := s.db.ExecContext(ctx, query,
 		uuid.UUID(event.ID),
@@ -65,7 +65,6 @@ func (s *Storage) Add(ctx context.Context, event model.Event) error {
 		event.Date,
 		event.Duration.Milliseconds(),
 		event.Description,
-		uuid.UUID(event.UserID),
 		event.NotifyBefore.Milliseconds(),
 	)
 	if err != nil {
@@ -75,25 +74,23 @@ func (s *Storage) Add(ctx context.Context, event model.Event) error {
 	return nil
 }
 
-func (s *Storage) Update(ctx context.Context, id model.EventUUID, event model.Event) error {
+func (s *Storage) Update(ctx context.Context, event model.Event) error {
 	query := `
 	UPDATE events SET 
 		header = $1,
 		date = $2, 
 		duration = $3,
 		description = $4,
-		user_id = $5,
-		notify_before = $6
-    WHERE id = $7`
+		notify_before = $5
+    WHERE id = $6`
 
 	_, err := s.db.ExecContext(ctx, query,
 		event.Header,
 		event.Date,
 		event.Duration.Milliseconds(),
 		event.Description,
-		uuid.UUID(event.UserID),
 		event.NotifyBefore.Milliseconds(),
-		uuid.UUID(id),
+		uuid.UUID(event.ID),
 	)
 	if err != nil {
 		return fmt.Errorf("failed to db.ExecContext: %w", err)
@@ -102,7 +99,7 @@ func (s *Storage) Update(ctx context.Context, id model.EventUUID, event model.Ev
 	return nil
 }
 
-func (s *Storage) Delete(ctx context.Context, _ model.UserUUID, id model.EventUUID) error {
+func (s *Storage) Delete(ctx context.Context, id model.EventUUID) error {
 	query := `DELETE FROM events WHERE id = $1`
 
 	_, err := s.db.ExecContext(ctx, query, uuid.UUID(id))
@@ -113,13 +110,13 @@ func (s *Storage) Delete(ctx context.Context, _ model.UserUUID, id model.EventUU
 	return nil
 }
 
-func (s *Storage) GetForDay(ctx context.Context, userID model.UserUUID, date time.Time) ([]model.Event, error) {
+func (s *Storage) GetForDay(ctx context.Context, date time.Time) ([]model.Event, error) {
 	query := `
-		SELECT id, header, date, duration, description, user_id, notify_before	
+		SELECT id, header, date, duration, description, notify_before	
 		FROM events
-		WHERE user_id = $1 AND date = $2`
+		WHERE date = $1`
 
-	rows, err := s.db.QueryContext(ctx, query, uuid.UUID(userID), date)
+	rows, err := s.db.QueryContext(ctx, query, date)
 	if err != nil {
 		return nil, fmt.Errorf("failed to db.QueryContext: %w", err)
 	}
@@ -133,13 +130,13 @@ func (s *Storage) GetForDay(ctx context.Context, userID model.UserUUID, date tim
 	return events, nil
 }
 
-func (s *Storage) GetForWeek(ctx context.Context, userID model.UserUUID, date time.Time) ([]model.Event, error) {
+func (s *Storage) GetForWeek(ctx context.Context, date time.Time) ([]model.Event, error) {
 	query := `
-		SELECT id, header, date, duration, description, user_id, notify_before	
+		SELECT id, header, date, duration, description, notify_before	
 		FROM events
-		WHERE user_id = $1 AND date >= $2 AND date < $3`
+		WHERE date >= $1 AND date < $2`
 
-	rows, err := s.db.QueryContext(ctx, query, uuid.UUID(userID), date, date.Add(week))
+	rows, err := s.db.QueryContext(ctx, query, date, date.Add(week))
 	if err != nil {
 		return nil, fmt.Errorf("failed to db.QueryContext: %w", err)
 	}
@@ -153,15 +150,15 @@ func (s *Storage) GetForWeek(ctx context.Context, userID model.UserUUID, date ti
 	return events, nil
 }
 
-func (s *Storage) GetForMonth(ctx context.Context, userID model.UserUUID, date time.Time) ([]model.Event, error) {
+func (s *Storage) GetForMonth(ctx context.Context, date time.Time) ([]model.Event, error) {
 	start, end := GetMonthRange(date)
 
 	query := `
-		SELECT id, header, date, duration, description, user_id, notify_before	
+		SELECT id, header, date, duration, description, notify_before	
 		FROM events
-		WHERE user_id = $1 AND date >= $2 AND date < $3`
+		WHERE date >= $1 AND date < $2`
 
-	rows, err := s.db.QueryContext(ctx, query, uuid.UUID(userID), start, end)
+	rows, err := s.db.QueryContext(ctx, query, start, end)
 	if err != nil {
 		return nil, fmt.Errorf("failed to db.QueryContext: %w", err)
 	}
@@ -184,7 +181,6 @@ func scan(rows *sql.Rows) ([]model.Event, error) {
 		var dateInfo time.Time
 		var duration int64
 		var description string
-		var userID uuid.UUID
 		var notifyBefore int64
 
 		err := rows.Scan(
@@ -193,7 +189,6 @@ func scan(rows *sql.Rows) ([]model.Event, error) {
 			&dateInfo,
 			&duration,
 			&description,
-			&userID,
 			&notifyBefore,
 		)
 		if err != nil {
@@ -206,7 +201,6 @@ func scan(rows *sql.Rows) ([]model.Event, error) {
 			Date:         dateInfo,
 			Duration:     time.Duration(duration) * time.Millisecond,
 			Description:  description,
-			UserID:       model.UserUUID(userID),
 			NotifyBefore: time.Duration(notifyBefore) * time.Millisecond,
 		})
 	}

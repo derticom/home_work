@@ -18,7 +18,6 @@ func TestStorage(t *testing.T) {
 	ctx := context.Background()
 	eventsStorage := memorystorage.New()
 
-	userUUID := model.UserUUID(uuid.New())
 	eventUUID := model.EventUUID(uuid.New())
 	date := time.Date(2025, 1, 25, 12, 0, 0, 0, time.UTC)
 	dateNextMonth := time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC)
@@ -29,7 +28,6 @@ func TestStorage(t *testing.T) {
 		Date:         date,
 		Duration:     3 * time.Hour,
 		Description:  "Some description of event",
-		UserID:       userUUID,
 		NotifyBefore: 3 * time.Hour,
 	}
 
@@ -39,34 +37,33 @@ func TestStorage(t *testing.T) {
 		Date:         date.Add(24 * 7 * 2 * time.Hour),
 		Duration:     4 * time.Hour,
 		Description:  "Some description of event",
-		UserID:       userUUID,
 		NotifyBefore: 1 * time.Hour,
 	}
 
 	// Добавление и проверка получения события на заданный день.
 	err := eventsStorage.Add(ctx, event)
 	require.NoError(t, err)
-	gotForDay, err := eventsStorage.GetForDay(ctx, userUUID, time.Date(2025, 1, 25, 0, 0, 0, 0, time.UTC))
+	gotForDay, err := eventsStorage.GetForDay(ctx, time.Date(2025, 1, 25, 0, 0, 0, 0, time.UTC))
 	require.NoError(t, err)
 	assert.Equal(t, []model.Event{event}, gotForDay)
 
 	// Проверка получения на неделю.
-	gotForWeek, err := eventsStorage.GetForWeek(ctx, userUUID, time.Date(2025, 1, 20, 0, 0, 0, 0, time.UTC))
+	gotForWeek, err := eventsStorage.GetForWeek(ctx, time.Date(2025, 1, 20, 0, 0, 0, 0, time.UTC))
 	require.NoError(t, err)
 	assert.Equal(t, []model.Event{event}, gotForWeek)
 
 	// Изменение события - перенос на 2 недели вперед.
-	err = eventsStorage.Update(ctx, event.ID, eventUpdated)
+	err = eventsStorage.Update(ctx, eventUpdated)
 	require.NoError(t, err)
-	gotForMonth, err := eventsStorage.GetForMonth(ctx, userUUID, dateNextMonth)
+	gotForMonth, err := eventsStorage.GetForMonth(ctx, dateNextMonth)
 	require.NoError(t, err)
 	require.Len(t, gotForMonth, 1)
 	assert.Equal(t, eventUpdated, gotForMonth[0])
 
 	// Удаление события.
-	err = eventsStorage.Delete(ctx, userUUID, eventUUID)
+	err = eventsStorage.Delete(ctx, eventUUID)
 	require.NoError(t, err)
-	gotForMonth, err = eventsStorage.GetForMonth(ctx, userUUID, date)
+	gotForMonth, err = eventsStorage.GetForMonth(ctx, date)
 	require.NoError(t, err)
 	assert.Empty(t, gotForMonth)
 }

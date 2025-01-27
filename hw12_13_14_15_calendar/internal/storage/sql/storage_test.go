@@ -1,5 +1,3 @@
-//go:build integration
-
 package sqlstorage_test
 
 import (
@@ -27,7 +25,6 @@ func TestStorage(t *testing.T) {
 		require.NoError(t, err)
 	}(storage, ctx)
 
-	userUUID := model.UserUUID(uuid.New())
 	eventUUID := model.EventUUID(uuid.New())
 	date := time.Date(2025, 1, 25, 12, 0, 0, 0, time.Local)
 	testEvent := model.Event{
@@ -36,7 +33,6 @@ func TestStorage(t *testing.T) {
 		Date:         date,
 		Duration:     30 * time.Minute,
 		Description:  "Some description of event",
-		UserID:       userUUID,
 		NotifyBefore: 3 * time.Hour,
 	}
 
@@ -46,27 +42,26 @@ func TestStorage(t *testing.T) {
 		Date:         date,
 		Duration:     99 * time.Minute,
 		Description:  "Some description of event",
-		UserID:       userUUID,
 		NotifyBefore: 1 * time.Hour,
 	}
 
 	// Проверка добавления.
 	err = storage.Add(ctx, testEvent)
 	require.NoError(t, err)
-	gotEvents, err := storage.GetForDay(ctx, userUUID, date)
+	gotEvents, err := storage.GetForDay(ctx, date)
 	require.NoError(t, err)
 	require.Equal(t, testEvent, gotEvents[0])
 
 	// Проверка обновления.
-	err = storage.Update(ctx, eventUUID, testEventUpd)
+	err = storage.Update(ctx, testEventUpd)
 	require.NoError(t, err)
-	gotEventsUpdated, err := storage.GetForDay(ctx, userUUID, date)
+	gotEventsUpdated, err := storage.GetForDay(ctx, date)
 	require.Equal(t, testEventUpd, gotEventsUpdated[0])
 
 	// Проверка удаления.
 	err = storage.Delete(ctx, eventUUID)
 	require.NoError(t, err)
-	got, err := storage.GetForDay(ctx, userUUID, date)
+	got, err := storage.GetForDay(ctx, date)
 	require.NoError(t, err)
 	require.Empty(t, got)
 }

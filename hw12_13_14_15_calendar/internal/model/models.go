@@ -13,7 +13,6 @@ type Event struct {
 	Date         time.Time     // Дата и время события.
 	Duration     time.Duration // Длительность события.
 	Description  string        // Описание события.
-	UserID       UserUUID      // ID пользователя, владельца события.
 	NotifyBefore time.Duration // За сколько времени высылать уведомление.
 }
 
@@ -22,10 +21,6 @@ type Notification struct {
 	ID     uuid.UUID // Уникальный идентификатор события.
 	Header string    // Заголовок.
 	Date   time.Time // Дата и время события.
-	UserID string    // ID пользователя, которому отправлять.
 }
 
-type (
-	EventUUID uuid.UUID
-	UserUUID  uuid.UUID
-)
+type EventUUID uuid.UUID

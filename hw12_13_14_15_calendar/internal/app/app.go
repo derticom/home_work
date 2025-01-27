@@ -15,11 +15,11 @@ import (
 
 type Storage interface {
 	Add(ctx context.Context, event model.Event) error
-	Update(ctx context.Context, ID model.EventUUID, event model.Event) error
-	Delete(_ context.Context, userID model.UserUUID, id model.EventUUID) error
-	GetForDay(ctx context.Context, UserID model.UserUUID, date time.Time) ([]model.Event, error)
-	GetForWeek(ctx context.Context, UserID model.UserUUID, date time.Time) ([]model.Event, error)
-	GetForMonth(ctx context.Context, UserID model.UserUUID, date time.Time) ([]model.Event, error)
+	Update(ctx context.Context, event model.Event) error
+	Delete(_ context.Context, id model.EventUUID) error
+	GetForDay(ctx context.Context, date time.Time) ([]model.Event, error)
+	GetForWeek(ctx context.Context, date time.Time) ([]model.Event, error)
+	GetForMonth(ctx context.Context, date time.Time) ([]model.Event, error)
 }
 
 func Run(ctx context.Context, cfg *config.Config, log *slog.Logger) error {
