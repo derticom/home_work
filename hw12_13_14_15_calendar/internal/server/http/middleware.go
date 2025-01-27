@@ -4,8 +4,9 @@ import (
 	"net/http"
 )
 
-func loggingMiddleware(next http.Handler) http.Handler { //nolint:unused
+func (s *Server) loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// TODO
+		s.serverLog.Info(r.RemoteAddr, r.Method, r.URL.Path, r.Proto, r.UserAgent())
+		next.ServeHTTP(w, r)
 	})
 }
