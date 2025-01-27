@@ -1,3 +1,5 @@
+BIN := "./bin/calendar"
+
 test:
 	go test -race ./internal/...
 
@@ -7,3 +9,5 @@ install-lint-deps:
 lint: install-lint-deps
 	golangci-lint --config=.golangci.yml run ./...
 
+build:
+	go build -v -o $(BIN) ./cmd/calendar
