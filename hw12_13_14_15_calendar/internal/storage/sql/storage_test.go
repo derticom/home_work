@@ -1,3 +1,5 @@
+//go:build integration
+
 package sqlstorage_test
 
 import (
