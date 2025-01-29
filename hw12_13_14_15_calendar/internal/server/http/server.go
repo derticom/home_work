@@ -61,7 +61,7 @@ func (s *Server) Run(ctx context.Context) error {
 	mux.HandleFunc("DELETE /delete", s.delete)
 	mux.HandleFunc("GET /get_for_day", s.getForDay)
 	mux.HandleFunc("GET /get_for_week", s.getForWeek)
-	mux.HandleFunc("/get_for_month", s.getForMonth)
+	mux.HandleFunc("GET /get_for_month", s.getForMonth)
 
 	loggedMux := s.loggingMiddleware(mux)
 
