@@ -9,6 +9,7 @@ import (
 	"github.com/derticom/home_work/hw12_13_14_15_calendar/internal/config"
 	"github.com/derticom/home_work/hw12_13_14_15_calendar/internal/model"
 	internalhttp "github.com/derticom/home_work/hw12_13_14_15_calendar/internal/server/http"
+	srvс "github.com/derticom/home_work/hw12_13_14_15_calendar/internal/service"
 	memorystorage "github.com/derticom/home_work/hw12_13_14_15_calendar/internal/storage/memory"
 	sqlstorage "github.com/derticom/home_work/hw12_13_14_15_calendar/internal/storage/sql"
 )
@@ -16,7 +17,7 @@ import (
 type Storage interface {
 	Add(ctx context.Context, event model.Event) error
 	Update(ctx context.Context, event model.Event) error
-	Delete(_ context.Context, id model.EventUUID) error
+	Delete(ctx context.Context, id model.EventUUID) error
 	GetForDay(ctx context.Context, date time.Time) ([]model.Event, error)
 	GetForWeek(ctx context.Context, date time.Time) ([]model.Event, error)
 	GetForMonth(ctx context.Context, date time.Time) ([]model.Event, error)
@@ -40,9 +41,9 @@ func Run(ctx context.Context, cfg *config.Config, log *slog.Logger) error {
 		storage = memorystorage.New()
 	}
 
-	fmt.Println(storage) // todo remove
+	service := srvс.New(storage, log)
 
-	server := internalhttp.New(cfg.Server.Address, cfg.Server.Timeout, log)
+	server := internalhttp.New(service, cfg.Server.Address, cfg.Server.Timeout, log)
 
 	err := server.Run(ctx)
 	if err != nil {

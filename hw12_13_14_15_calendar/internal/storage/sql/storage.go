@@ -114,7 +114,7 @@ func (s *Storage) GetForDay(ctx context.Context, date time.Time) ([]model.Event,
 	query := `
 		SELECT id, header, date, duration, description, notify_before	
 		FROM events
-		WHERE date = $1`
+		WHERE DATE(date) = $1`
 
 	rows, err := s.db.QueryContext(ctx, query, date)
 	if err != nil {

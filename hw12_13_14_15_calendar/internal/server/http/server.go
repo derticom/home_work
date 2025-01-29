@@ -8,9 +8,12 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/derticom/home_work/hw12_13_14_15_calendar/internal/model"
 )
 
 type Server struct {
+	service Service
 	address string
 	timeout time.Duration
 
@@ -18,13 +21,17 @@ type Server struct {
 	serverLog *slog.Logger
 }
 
-type Logger interface { // TODO
-}
-
-type Application interface { // TODO
+type Service interface {
+	Add(ctx context.Context, event model.Event) error
+	Update(ctx context.Context, event model.Event) error
+	Delete(ctx context.Context, id model.EventUUID) error
+	GetForDay(ctx context.Context, date time.Time) ([]model.Event, error)
+	GetForWeek(ctx context.Context, date time.Time) ([]model.Event, error)
+	GetForMonth(ctx context.Context, date time.Time) ([]model.Event, error)
 }
 
 func New(
+	service Service,
 	address string,
 	timeout time.Duration,
 	log *slog.Logger,
@@ -38,6 +45,7 @@ func New(
 	serverLog := slog.New(slog.NewJSONHandler(file, nil))
 
 	return &Server{
+		service:   service,
 		address:   address,
 		timeout:   timeout,
 		log:       log,
@@ -47,7 +55,13 @@ func New(
 
 func (s *Server) Run(ctx context.Context) error {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/hello", s.handleMain)
+	mux.HandleFunc("GET /hello", s.main)
+	mux.HandleFunc("POST /add", s.add)
+	mux.HandleFunc("PUT /update", s.update)
+	mux.HandleFunc("DELETE /delete", s.delete)
+	mux.HandleFunc("GET /get_for_day", s.getForDay)
+	mux.HandleFunc("GET /get_for_week", s.getForWeek)
+	mux.HandleFunc("/get_for_month", s.getForMonth)
 
 	loggedMux := s.loggingMiddleware(mux)
 
@@ -76,16 +90,4 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func (s *Server) handleMain(w http.ResponseWriter, r *http.Request) {
-	s.log.Info("start processing", "request", r.URL.Path)
-
-	_, err := w.Write([]byte("hello world"))
-	if err != nil {
-		s.log.Error("failed to write response", "error", err)
-		return
-	}
-
-	s.log.Info("successfully finished processing", "request", r.URL.Path)
 }
