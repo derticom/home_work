@@ -36,7 +36,7 @@ func New(
 	timeout time.Duration,
 	log *slog.Logger,
 ) *Server {
-	file, err := os.OpenFile("server.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	file, err := os.OpenFile("http_server.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		log.Error("failed to os.OpenFile", "error", err)
 		file = os.Stderr
@@ -79,7 +79,7 @@ func (s *Server) Run(ctx context.Context) error {
 		}
 	}()
 
-	s.log.Info("server listening on " + s.address)
+	s.log.Info("http server listening on " + s.address)
 	err := server.ListenAndServe()
 	if err != nil {
 		if errors.Is(err, http.ErrServerClosed) {

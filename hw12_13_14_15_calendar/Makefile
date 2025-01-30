@@ -9,5 +9,8 @@ install-lint-deps:
 lint: install-lint-deps
 	golangci-lint --config=.golangci.yml run ./...
 
+generate:
+	protoc --go_out=./pb/ --go-grpc_out=./pb/ ./proto/calendar.proto
+
 build:
 	go build -v -o $(BIN) ./cmd/calendar

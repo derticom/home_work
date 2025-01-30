@@ -8,6 +8,7 @@ import (
 
 	"github.com/derticom/home_work/hw12_13_14_15_calendar/internal/config"
 	"github.com/derticom/home_work/hw12_13_14_15_calendar/internal/model"
+	internalgrpc "github.com/derticom/home_work/hw12_13_14_15_calendar/internal/server/grpc"
 	internalhttp "github.com/derticom/home_work/hw12_13_14_15_calendar/internal/server/http"
 	srvс "github.com/derticom/home_work/hw12_13_14_15_calendar/internal/service"
 	memorystorage "github.com/derticom/home_work/hw12_13_14_15_calendar/internal/storage/memory"
@@ -43,11 +44,28 @@ func Run(ctx context.Context, cfg *config.Config, log *slog.Logger) error {
 
 	service := srvс.New(storage, log)
 
-	server := internalhttp.New(service, cfg.Server.Address, cfg.Server.Timeout, log)
+	grpcServer := internalgrpc.New(service, cfg.GRPCAddress, log)
 
-	err := server.Run(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to server.Run: %w", err)
+	httpServer := internalhttp.New(service, cfg.HTTPServer.Address, cfg.HTTPServer.Timeout, log)
+
+	errCh := make(chan error)
+
+	go func() {
+		if err := grpcServer.Run(); err != nil {
+			errCh <- fmt.Errorf("failed to grpcServer.Run: %w", err)
+		}
+	}()
+
+	go func() {
+		if err := httpServer.Run(ctx); err != nil {
+			errCh <- fmt.Errorf("failed to httpServer.Run: %w", err)
+		}
+	}()
+
+	select {
+	case err := <-errCh:
+		return fmt.Errorf("critical service error: %w", err)
+	case <-ctx.Done():
 	}
 
 	return nil

@@ -12,7 +12,8 @@ import (
 type Config struct {
 	LogLevel string `yaml:"log_level"`
 
-	Server HTTPServer `yaml:"http_server"`
+	HTTPServer  HTTPServer `yaml:"http_server"`
+	GRPCAddress string     `yaml:"grpc_address"`
 
 	UseDataBaseStorage bool   `yaml:"use_data_base_storage"`
 	PostgresURL        string `yaml:"postgres_url"`
