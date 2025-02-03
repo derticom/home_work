@@ -22,9 +22,9 @@ type Event struct {
 
 // Notification - временная сущность, не хранится в БД, складывается в очередь для рассыльщика.
 type Notification struct {
-	ID     uuid.UUID // Уникальный идентификатор события.
-	Header string    // Заголовок.
-	Date   time.Time // Дата и время события.
+	ID     uuid.UUID `json:"id"`     // Уникальный идентификатор события.
+	Header string    `json:"header"` // Заголовок.
+	Date   time.Time `json:"date"`   // Дата и время события.
 }
 
 type EventUUID uuid.UUID

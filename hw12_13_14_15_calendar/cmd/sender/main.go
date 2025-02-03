@@ -15,7 +15,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT)
 	defer stop()
 
-	cfg := config.NewCalendarConfig()
+	cfg := config.NewSenderConfig()
 
 	log, err := logger.SetupLogger(cfg.LogLevel)
 	if err != nil {
@@ -23,7 +23,7 @@ func main() {
 	}
 
 	go func() {
-		if err = app.RunCalendar(ctx, cfg, log); err != nil {
+		if err = app.RunSender(ctx, cfg, log); err != nil {
 			log.Error("critical service error", "error", err)
 			stop()
 			return
