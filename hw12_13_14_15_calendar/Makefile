@@ -1,4 +1,4 @@
-BIN := "./bin/calendar"
+BIN := "./bin"
 
 test:
 	go test -race ./internal/...
@@ -13,4 +13,7 @@ generate:
 	protoc --go_out=./pb/ --go-grpc_out=./pb/ ./proto/calendar.proto
 
 build:
-	go build -v -o $(BIN) ./cmd/calendar
+	mkdir -p $(BIN)
+	go build -v -o $(BIN)/calendar ./cmd/calendar
+	go build -v -o $(BIN)/scheduler ./cmd/scheduler
+	go build -v -o $(BIN)/sender ./cmd/sender
