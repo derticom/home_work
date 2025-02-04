@@ -1,7 +1,7 @@
 log_level: "debug"
 use_data_base_storage: true
-postgres_url: "postgresql://postgres:password@localhost:5432/calendar?sslmode=disable"
-grpc_address: "localhost:8090"
+postgres_url: "postgresql://postgres:password@postgres:5432/calendar?sslmode=disable"
+grpc_address: "calendar:8090"
 http_server:
-  address: "localhost:8085"
+  address: "calendar:8085"
   timeout: 30s

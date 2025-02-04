@@ -1,2 +1,2 @@
 log_level: "debug"
-amqp_uri: "amqp://user:pass@localhost:5672/"
+amqp_uri: "amqp://user:pass@rabbitmq:5672/"
