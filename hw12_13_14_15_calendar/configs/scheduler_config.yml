@@ -1,4 +1,4 @@
 log_level: "debug"
-grpc_address: "localhost:8090"
-amqp_uri: "amqp://user:pass@localhost:5672/"
+grpc_address: "calendar:8090"
+amqp_uri: "amqp://user:pass@rabbitmq:5672/"
 process_period: 30s

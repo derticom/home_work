@@ -21,7 +21,7 @@ func RunCalendar(ctx context.Context, cfg *config.CalendarConfig, log *slog.Logg
 			return fmt.Errorf("failed to connect to postgres: %w", err)
 		}
 
-		err = dBStorage.Migrate("migrations")
+		err = dBStorage.Migrate("./migrations")
 		if err != nil {
 			return fmt.Errorf("failed to dBStorage.Migrate: %w", err)
 		}

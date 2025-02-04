@@ -75,9 +75,19 @@ services:
     networks:
       - backend
 
+  integration-tests:
+    build:
+      context: ../
+      dockerfile: tests/integration-tests.dockerfile
+    container_name: integration-tests
+    depends_on:
+      calendar:
+        condition: service_started
+      scheduler:
+        condition: service_started
+      sender:
+        condition: service_started
+    networks:
+      - backend
 networks:
   backend:
-
-## To run:
-##  docker compose -f deployments/docker-compose.yaml build --no-cache
-##  docker compose -f deployments/docker-compose.yaml up
